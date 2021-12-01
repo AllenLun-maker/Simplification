@@ -721,13 +721,6 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
     vector<int> checked;
     vector<int> storage_index;
 
-    vector<node> test;
-    for (float F = 0; F <= 9; F++) {
-        node in;
-        in.index = 0; in.curvature = F;
-        test.push_back(in);
-    }
-
     cout << "start merging" << endl;
     mergesort(h_mean, 0, h_mean.size() - 1);
     cout << "finish merging" << endl;
