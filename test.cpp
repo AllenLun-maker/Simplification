@@ -92,7 +92,6 @@ Eigen::Matrix3d eigen_value(string dataname) {
     double* eigMatptrnew = new double[val1.size()];
     Eigen::Map<Eigen::Matrix3d>(eigMatptrnew, val1.rows(), val1.cols()) = val1;
 
-
     /*
     std::cout << val1.row(0) << "\n" << val1.row(1) << "\n" << val1.row(2) << std::endl;
 
@@ -127,14 +126,18 @@ Eigen::Matrix3d eigen_value(string dataname) {
 int* sort(int num[], string dataname) {
     Eigen::Matrix3d matrix = eigen_value(dataname);
 
+
+
     double temp = 0;
     int tmpN = 0;
 
     std::vector<int> array;
 
+    //該迴圈將特徵值由大排到小
     for (int i = 0; i < 9; i++) {
         for (int j = i; j < 9; j++) {
             if (matrix(j) > matrix(i)) {
+                //進行Swapping
                 temp = matrix(j);
                 tmpN = num[j];
                 matrix(j) = matrix(i);
@@ -281,12 +284,36 @@ void kix(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
                     pow(newsearchPoint.z - newcloud->points[qindex.at(j)].z, 2)));
             }
         }
-        for (int i = 0; i < 4; i++)
+        if (ptr[2] == 0) {
+            for (int i = 0; i < 4; i++)
+            {
+                if (qindex.at(i) >= 0) {
+                    g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
+                        pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
+                        pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].x) / u1down;
+                }
+            }
+        }
+        else if (ptr[2] == 3)
         {
-            if (qindex.at(i) >= 0) {
-                g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
-                    pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
-                    pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].z) / u1down;
+            for (int i = 0; i < 4; i++)
+            {
+                if (qindex.at(i) >= 0) {
+                    g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
+                        pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
+                        pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].y) / u1down;
+                }
+            }
+        }
+        else if (ptr[2] == 6)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (qindex.at(i) >= 0) {
+                    g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
+                        pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
+                        pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].z) / u1down;
+                }
             }
         }
 
@@ -377,12 +404,36 @@ void kiy(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
                     pow(newsearchPoint.z - newcloud->points[qindex.at(j)].z, 2)));
             }
         }
-        for (int i = 0; i < 4; i++)
+        if (ptr[2] == 0) {
+            for (int i = 0; i < 4; i++)
+            {
+                if (qindex.at(i) >= 0) {
+                    g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
+                        pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
+                        pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].x) / u1down;
+                }
+            }
+        }
+        else if (ptr[2] == 3)
         {
-            if (qindex.at(i) >= 0) {
-                g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
-                    pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
-                    pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].z) / u1down;
+            for (int i = 0; i < 4; i++)
+            {
+                if (qindex.at(i) >= 0) {
+                    g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
+                        pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
+                        pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].y) / u1down;
+                }
+            }
+        }
+        else if (ptr[2] == 6)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (qindex.at(i) >= 0) {
+                    g_ui += ((1 / (sqrt(pow(newsearchPoint.x - newcloud->points[qindex.at(i)].x, 2) +
+                        pow(newsearchPoint.y - newcloud->points[qindex.at(i)].y, 2) +
+                        pow(newsearchPoint.z - newcloud->points[qindex.at(i)].z, 2)))) * newcloud->points[qindex.at(i)].z) / u1down;
+                }
             }
         }
 
@@ -610,7 +661,7 @@ Eigen::Matrix3d eigenv_v(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
 {
     std::vector<node> h_mean; //主要儲存vector
-    std::string filename = "S0001A0022_XYZ";
+    std::string filename = "S0001A0021";
     //load the file
     pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
 
@@ -714,6 +765,10 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
     Mean = Mean / input->size();
     cout << "finish mean" << endl;
 
+    /*for (int ex = 0; ex < h_mean.size(); ex++) {
+        cout << h_mean[ex].curvature << endl;
+    }*/
+
     vector<int> indices;
     //vector<int> record;
     vector<float> dist;
@@ -723,6 +778,9 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
 
     cout << "start merging" << endl;
     mergesort(h_mean, 0, h_mean.size() - 1);
+    /*for (int count = 0; count < h_mean.size(); count++) {
+        cout << h_mean[count].curvature << endl;
+    }*/
     cout << "finish merging" << endl;
 
     //cout << "test stop" << endl;
@@ -735,7 +793,7 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
 
     //int k = 0;
 
-    float alpha = 0.14;
+    float alpha = 0.1;
     cout << "start marking" << endl;
     pcl::PointXYZ searchPoint;
     for (int k = 0; k < h_mean.size(); k++) {
@@ -767,10 +825,7 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
             storage_index.push_back(tap);
     }
 
-    //cout << "stop" << endl;
     int counted = storage_index.size();
-    //cout << "remain points:" << counted << endl;
-    //cout << storage_index.size() << endl;
 
     pcl::PointCloud<pcl::PointXYZ> result;
     result.width = counted;
@@ -785,10 +840,10 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
         trace++;
     }
     cout << "ready to save" << endl;
-    pcl::io::savePCDFileASCII(filename + "simp001.pcd", result);
+    pcl::io::savePCDFileASCII(filename + "simp01.pcd", result);
 }
 
 int main() {
     simp();
-    
+    return 0;
 }
