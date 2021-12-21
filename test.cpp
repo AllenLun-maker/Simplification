@@ -658,10 +658,10 @@ Eigen::Matrix3d eigenv_v(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
     return vec1;
 }
 
-void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
+void simp(string filename)  //主程式
 {
     std::vector<node> h_mean; //主要儲存vector
-    std::string filename = "S0001A0021";
+    //std::string filename = "S0001A0022_XYZ";
     //load the file
     pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
 
@@ -671,14 +671,17 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
     }
 
     int num[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-    //std::cout << eigen_value(filename) << std::endl;
+    std::cout << eigen_value(filename) << std::endl;
 
+    cout << "into sort" << endl;
     int* ptr = sort(num, filename);
+    cout << "out of sort" << endl;
 
-    for (int i = 0; i < 3; i++) {
+    /*for (int i = 0; i < 3; i++) {
         std::cout << ptr[i] << std::endl;
-    }
+    }*/
 
+    cout << "into eigenvalue" << endl;
     Eigen::Matrix3d vector_eigen = eigenv_v(input);
 
     //build the kdtree
@@ -723,7 +726,7 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
 
         //std::cout << elapsed_seconds.count() << std::endl;
 
-
+        //cout << "into ki" << endl;
         kix(i, input, newcloud, newkdtree, vector_eigen, ptr);
         kiy(i, input, newcloud, newkdtree, vector_eigen, ptr);
 
@@ -738,16 +741,17 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
         double Ki_second = 0;
         double H_i;
 
-        node point;
+       
 
 
         Ki_first = k_i(g_kix, N);
 
         Ki_second = k_i(g_kiy, N);
 
+        //cout << "into H_i" << endl;
         H_i = (Ki_first + Ki_second) / 2;
 
-
+        node point;
         point.index = i;
         point.curvature = H_i;
 
@@ -793,7 +797,7 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
 
     //int k = 0;
 
-    float alpha = 0.1;
+    float alpha = 0.27;
     cout << "start marking" << endl;
     pcl::PointXYZ searchPoint;
     for (int k = 0; k < h_mean.size(); k++) {
@@ -840,10 +844,12 @@ void simp(/*pcl::PointCloud<PointT>::Ptr input*/)  //主程式
         trace++;
     }
     cout << "ready to save" << endl;
-    pcl::io::savePCDFileASCII(filename + "simp01.pcd", result);
+    pcl::io::savePCDFileASCII(filename + "simp027.pcd", result);
 }
 
 int main() {
-    simp();
+    string input;
+    cin >> input;
+    simp(input);
     return 0;
 }
