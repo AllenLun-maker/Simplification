@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Simplification", "Simplification.vcxproj", "{5D5BF3B1-AD55-450E-8B7C-5AF237E51551}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Coverage-Test1", "..\Coverage-Test1\Coverage-Test1.vcxproj", "{3E2F226A-E557-4B17-A56D-F3C7C11A033F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{5D5BF3B1-AD55-450E-8B7C-5AF237E51551}.Release|x64.Build.0 = Release|x64
 		{5D5BF3B1-AD55-450E-8B7C-5AF237E51551}.Release|x86.ActiveCfg = Release|Win32
 		{5D5BF3B1-AD55-450E-8B7C-5AF237E51551}.Release|x86.Build.0 = Release|Win32
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Debug|x64.ActiveCfg = Debug|x64
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Debug|x64.Build.0 = Debug|x64
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Debug|x86.ActiveCfg = Debug|Win32
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Debug|x86.Build.0 = Debug|Win32
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Release|x64.ActiveCfg = Release|x64
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Release|x64.Build.0 = Release|x64
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Release|x86.ActiveCfg = Release|Win32
+		{3E2F226A-E557-4B17-A56D-F3C7C11A033F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

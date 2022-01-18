@@ -17,6 +17,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/segmentation/region_growing.h>
+#include <pcl/visualization/cloud_viewer.h>
 #include<vector>
 #include<algorithm>
 #include<fstream>
@@ -26,11 +27,17 @@
 #include<cstdlib>
 #include<cmath>
 #include <iomanip>
+#include <gtest/gtest.h>
+
+#include "Header.h"
+//#include "Measure.h"
+
 #define _USE_MATH_DEFINES // for C++
 #include <math.h>
 #pragma comment(lib, "libfftw3-3.lib")
 
 using namespace std;
+using namespace Simplification;
 
 #define PI 3.14 //定義PI=3.14159
 const float Min = INT_MIN; //常數 表無限大
@@ -45,120 +52,7 @@ typedef pcl::Normal Normal;
 #define IMAG 1
 //實部與虛部
 
-Eigen::Matrix3d eigen_value(string dataname) {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile(dataname + ".pcd", *cloud);
-    int cld_sz_1 = cloud->size();
-    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-    normals->resize(cld_sz_1);
-
-    //计算中心点坐标
-    double center_x1 = 0, center_y1 = 0, center_z1 = 0;
-    for (int i = 0; i < cld_sz_1; i++) {
-        center_x1 += cloud->points[i].x;
-        center_y1 += cloud->points[i].y;
-        center_z1 += cloud->points[i].z;
-
-    }
-    center_x1 /= cld_sz_1;
-    center_y1 /= cld_sz_1;
-    center_z1 /= cld_sz_1;
-    //计算协方差矩阵
-    double xx1 = 0, xy1 = 0, xz1 = 0, yy1 = 0, yz1 = 0, zz1 = 0;
-    for (int i = 0; i < cld_sz_1; i++) {
-        xx1 += (cloud->points[i].x - center_x1) * (cloud->points[i].x - center_x1);
-        xy1 += (cloud->points[i].x - center_x1) * (cloud->points[i].y - center_y1);
-        xz1 += (cloud->points[i].x - center_x1) * (cloud->points[i].z - center_z1);
-        yy1 += (cloud->points[i].y - center_y1) * (cloud->points[i].y - center_y1);
-        yz1 += (cloud->points[i].y - center_y1) * (cloud->points[i].z - center_z1);
-        zz1 += (cloud->points[i].z - center_z1) * (cloud->points[i].z - center_z1);
-
-    }
-    //大小为3*3的协方差矩阵
-    Eigen::Matrix3d covMat1(3, 3);
-    covMat1(0, 0) = xx1 / cld_sz_1;
-    covMat1(0, 1) = covMat1(1, 0) = xy1 / cld_sz_1;
-    covMat1(0, 2) = covMat1(2, 0) = xz1 / cld_sz_1;
-    covMat1(1, 1) = yy1 / cld_sz_1;
-    covMat1(1, 2) = covMat1(2, 1) = yz1 / cld_sz_1;
-    covMat1(2, 2) = zz1 / cld_sz_1;
-
-    //求特征值与特征向量
-    Eigen::EigenSolver<Eigen::Matrix3d> es1(covMat1);
-    Eigen::Matrix3d val1 = es1.pseudoEigenvalueMatrix();
-    Eigen::Matrix3d vec1 = es1.pseudoEigenvectors();
-
-    double* eigMatptr = val1.data();
-    double* eigMatptrnew = new double[val1.size()];
-    Eigen::Map<Eigen::Matrix3d>(eigMatptrnew, val1.rows(), val1.cols()) = val1;
-
-    /*
-    std::cout << val1.row(0) << "\n" << val1.row(1) << "\n" << val1.row(2) << std::endl;
-
-    for (int i = 0; i < 9; ++i) {
-        std::cout<< val1(i)  << std::endl;
-    }
-
-    */
-
-    /*
-    Eigen::RowVector3d EigenXYZ = vec1.row(0);
-    Eigen::VectorXd a(1);
-    a = EigenXYZ.col(0);
-    */
-
-
-
-    /*
-    std::cout << "\n------" << dataname << "--------" << std::endl;
-    std::cout << "     x  " << "     y  " << "     z  " << std::endl;
-    std::cout << val1.row(0) << "\n" << val1.row(1) << "\n" << val1.row(2) << std::endl;
-    std::cout << "\n------" << dataname << "--------" << std::endl;
-    std::cout << "     x  " << "     y  " << "     z  " << std::endl;
-    std::cout << vec1.row(0) << "\n" << vec1.row(1) << "\n" << vec1.row(2) << std::endl;
-    */
-
-    return val1;
-
-    //return vec1;
-}
-
-int* sort(int num[], string dataname) {
-    Eigen::Matrix3d matrix = eigen_value(dataname);
-
-
-
-    double temp = 0;
-    int tmpN = 0;
-
-    std::vector<int> array;
-
-    //該迴圈將特徵值由大排到小
-    for (int i = 0; i < 9; i++) {
-        for (int j = i; j < 9; j++) {
-            if (matrix(j) > matrix(i)) {
-                //進行Swapping
-                temp = matrix(j);
-                tmpN = num[j];
-                matrix(j) = matrix(i);
-                num[j] = num[i];
-                matrix(i) = temp;
-                num[i] = tmpN;
-            }
-        }
-    }
-
-    for (int i = 0; i < 3; i++) {
-        if (num[i] == 4) {
-            num[i] = 3;
-        }
-        if (num[i] == 8) {
-            num[i] = 6;
-        }
-    }
-    // 3的就是 Vector y (3'4'5) , 0 就是 vector x (0'1'2) , 6 就是 vector x (6'7'8) 
-    return num;
-}
+string inputcloud;
 
 struct node {
 	int index;
@@ -167,9 +61,6 @@ struct node {
 
 float k_i(vector<float> SampV, int N)
 {
-    //cout << "input your sample value......" << endl;
-    //vector<double> SampValue; //採樣值
-
     vector<float> a; //FFT後實部運算
     vector<float> b; //FFT後虛部運算
     fftw_complex* x = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N); //fftw專用輸出資料結構(輸入)
@@ -220,8 +111,8 @@ void kix(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
         pcl::PointXYZ newsearchPoint;
 
         newsearchPoint.x = (*cloud)[index].x + u * (vector(ptr[0])) / 100;
-        newsearchPoint.y = (*cloud)[index].y + u * (vector(ptr[0]+1)) / 100;
-        newsearchPoint.z = (*cloud)[index].z + u * (vector(ptr[0]+2)) / 100;
+        newsearchPoint.y = (*cloud)[index].y + u * (vector(ptr[0] + 1)) / 100;
+        newsearchPoint.z = (*cloud)[index].z + u * (vector(ptr[0] + 2)) / 100;
 
         int newK = 30;
 
@@ -229,12 +120,12 @@ void kix(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
         std::vector<float> newpointNKNSquaredDistance(newK);
 
         float XPZa = vector(ptr[1]) * newsearchPoint.x;
-        float XPZb = vector(ptr[1]+1) * newsearchPoint.y;
-        float XPZc = vector(ptr[1]+2) * newsearchPoint.z;
+        float XPZb = vector(ptr[1] + 1) * newsearchPoint.y;
+        float XPZc = vector(ptr[1] + 2) * newsearchPoint.z;
 
         float XPYa = vector(ptr[2]) * newsearchPoint.x;
-        float XPYb = vector(ptr[2]+1) * newsearchPoint.y;
-        float XPYc = vector(ptr[2]+2) * newsearchPoint.z;
+        float XPYb = vector(ptr[2] + 1) * newsearchPoint.y;
+        float XPYc = vector(ptr[2] + 2) * newsearchPoint.z;
 
         if (newkdtree.nearestKSearch(newsearchPoint, newK, newpointIdxNKNSearch, newpointNKNSquaredDistance) > 0)
         {
@@ -243,12 +134,12 @@ void kix(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
             for (std::size_t i = 0; i < newpointIdxNKNSearch.size(); ++i) {
 
                 float XOZa = vector(ptr[1]) * (*newcloud)[newpointIdxNKNSearch[i]].x;
-                float XOZb = vector(ptr[1]+1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
-                float XOZc = vector(ptr[1]+2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
+                float XOZb = vector(ptr[1] + 1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
+                float XOZc = vector(ptr[1] + 2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
 
                 float XOYa = vector(ptr[2]) * (*newcloud)[newpointIdxNKNSearch[i]].x;
-                float XOYb = vector(ptr[2]+1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
-                float XOYc = vector(ptr[2]+2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
+                float XOYb = vector(ptr[2] + 1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
+                float XOYc = vector(ptr[2] + 2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
 
                 if (XOZa + XOZb + XOZc < XPZa + XPZb + XPZc && XOYa + XOYb + XOYc < XPYa + XPYb + XPYc && q1index < 0) {
                     q1index = newpointIdxNKNSearch[i];
@@ -334,8 +225,8 @@ void kiy(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
         pcl::PointXYZ newsearchPoint;
 
         newsearchPoint.x = (*cloud)[index].x + u * (vector(ptr[1])) / 100;
-        newsearchPoint.y = (*cloud)[index].y + u * (vector(ptr[1]+1)) / 100;
-        newsearchPoint.z = (*cloud)[index].z + u * (vector(ptr[1]+2)) / 100;
+        newsearchPoint.y = (*cloud)[index].y + u * (vector(ptr[1] + 1)) / 100;
+        newsearchPoint.z = (*cloud)[index].z + u * (vector(ptr[1] + 2)) / 100;
 
         int newK = 30;
 
@@ -343,12 +234,12 @@ void kiy(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
         std::vector<float> newpointNKNSquaredDistance(newK);
 
         float YPZa = vector(ptr[0]) * newsearchPoint.x;
-        float YPZb = vector(ptr[0]+1) * newsearchPoint.y;
-        float YPZc = vector(ptr[0]+2) * newsearchPoint.z;
+        float YPZb = vector(ptr[0] + 1) * newsearchPoint.y;
+        float YPZc = vector(ptr[0] + 2) * newsearchPoint.z;
 
         float XPYa = vector(ptr[2]) * newsearchPoint.x;
-        float XPYb = vector(ptr[2]+1) * newsearchPoint.y;
-        float XPYc = vector(ptr[2]+2) * newsearchPoint.z;
+        float XPYb = vector(ptr[2] + 1) * newsearchPoint.y;
+        float XPYc = vector(ptr[2] + 2) * newsearchPoint.z;
 
 
         if (newkdtree.nearestKSearch(newsearchPoint, newK, newpointIdxNKNSearch, newpointNKNSquaredDistance) > 0)
@@ -357,12 +248,12 @@ void kiy(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
             for (std::size_t i = 0; i < newpointIdxNKNSearch.size(); ++i) {
 
                 float YOZa = vector(ptr[0]) * (*newcloud)[newpointIdxNKNSearch[i]].x;
-                float YOZb = vector(ptr[0]+1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
-                float YOZc = vector(ptr[0]+2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
+                float YOZb = vector(ptr[0] + 1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
+                float YOZc = vector(ptr[0] + 2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
 
                 float XOYa = vector(ptr[2]) * (*newcloud)[newpointIdxNKNSearch[i]].x;
-                float XOYb = vector(ptr[2]+1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
-                float XOYc = vector(ptr[2]+2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
+                float XOYb = vector(ptr[2] + 1) * (*newcloud)[newpointIdxNKNSearch[i]].y;
+                float XOYc = vector(ptr[2] + 2) * (*newcloud)[newpointIdxNKNSearch[i]].z;
 
 
 
@@ -442,61 +333,6 @@ void kiy(int index, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<p
     }
 }
 
-void reg(pcl::PointCloud<PointT>::Ptr target) {
-    pcl::search::Search<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
-    pcl::PointCloud <Normal>::Ptr normals(new pcl::PointCloud <Normal>);
-    pcl::NormalEstimation<PointT, Normal> normal_estimator;
-    normal_estimator.setSearchMethod(tree);
-    normal_estimator.setInputCloud(target);
-    normal_estimator.setKSearch(50);
-    normal_estimator.compute(*normals);
-
-    pcl::RegionGrowing<PointT, Normal> reg;
-    reg.setMinClusterSize(100);
-    reg.setMaxClusterSize(5000);
-    reg.setSearchMethod(tree);
-    reg.setNumberOfNeighbours(20);
-    reg.setInputCloud(target);
-    //reg.setIndices (indices);
-    reg.setInputNormals(normals);
-    reg.setSmoothnessThreshold(1.0 / 180.0 * M_PI);
-    reg.setCurvatureThreshold(0.1);
-
-    std::vector <pcl::PointIndices> clusters;
-    reg.extract(clusters);
-
-    std::cout << "Number of clusters is equal to " << clusters.size() << std::endl;
-    std::cout << "First cluster has " << clusters[0].indices.size() << " points." << std::endl;
-    std::cout << "These are the indices of the points of the initial" <<
-        std::endl << "cloud that belong to the first cluster:" << std::endl;
-    int counter = 0;
-    while (counter < clusters[0].indices.size())
-    {
-        std::cout << clusters[0].indices[counter] << ", ";
-        counter++;
-        if (counter % 10 == 0)
-            std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
-    pcl::PointCloud <PointRGB>::Ptr colored_cloud = reg.getColoredCloud();
-
-    pcl::io::savePCDFileASCII("reg_result1.pcd", *colored_cloud);
-    std::cout << "saved!!" << std::endl;
-
-    pcl::visualization::CloudViewer viewer("Cluster viewer");
-    viewer.showCloud(colored_cloud);
-    while (!viewer.wasStopped())
-    {
-    }
-}
-
-void printvector(vector<float> v) {
-	for (int i = 0; i < v.size(); i++) {
-		cout << v[i] << endl;
-	}
-}
-
 void Merge(std::vector<node>& A, int i, int m, int j) { //A用pointer表示
 	std::vector<node> Leftsub(A.begin() + i, A.begin() + m + 1);
 	std::vector<node> Rightsub(A.begin() + m + 1, A.begin() + j + 1);
@@ -554,11 +390,145 @@ void mergesort(std::vector<node>& A, int i, int j) {
 	}
 }
 
-void PrintArray(std::vector<node>& array) {
-	for (int i = 0; i < array.size(); i++) {
-		std::cout << array[i].index << " : " << array[i].curvature << std::endl;
-	}
-	std::cout << std::endl;
+Eigen::Matrix3d eigen_value(string dataname) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::io::loadPCDFile(dataname + ".pcd", *cloud);
+    int cld_sz_1 = cloud->size();
+    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+    normals->resize(cld_sz_1);
+
+    //計算中心點座標
+    double center_x1 = 0, center_y1 = 0, center_z1 = 0;
+    for (int i = 0; i < cld_sz_1; i++) {
+        center_x1 += cloud->points[i].x;
+        center_y1 += cloud->points[i].y;
+        center_z1 += cloud->points[i].z;
+
+    }
+    center_x1 /= cld_sz_1;
+    center_y1 /= cld_sz_1;
+    center_z1 /= cld_sz_1;
+    //計算共變異數矩陣
+    double xx1 = 0, xy1 = 0, xz1 = 0, yy1 = 0, yz1 = 0, zz1 = 0;
+    for (int i = 0; i < cld_sz_1; i++) {
+        xx1 += (cloud->points[i].x - center_x1) * (cloud->points[i].x - center_x1);
+        xy1 += (cloud->points[i].x - center_x1) * (cloud->points[i].y - center_y1);
+        xz1 += (cloud->points[i].x - center_x1) * (cloud->points[i].z - center_z1);
+        yy1 += (cloud->points[i].y - center_y1) * (cloud->points[i].y - center_y1);
+        yz1 += (cloud->points[i].y - center_y1) * (cloud->points[i].z - center_z1);
+        zz1 += (cloud->points[i].z - center_z1) * (cloud->points[i].z - center_z1);
+
+    }
+    //大小為3*3的共變異數矩陣
+    Eigen::Matrix3d covMat1(3, 3);
+    covMat1(0, 0) = xx1 / cld_sz_1;
+    covMat1(0, 1) = covMat1(1, 0) = xy1 / cld_sz_1;
+    covMat1(0, 2) = covMat1(2, 0) = xz1 / cld_sz_1;
+    covMat1(1, 1) = yy1 / cld_sz_1;
+    covMat1(1, 2) = covMat1(2, 1) = yz1 / cld_sz_1;
+    covMat1(2, 2) = zz1 / cld_sz_1;
+
+    //求特徵值與特徵向量
+    Eigen::EigenSolver<Eigen::Matrix3d> es1(covMat1);
+    Eigen::Matrix3d val1 = es1.pseudoEigenvalueMatrix();
+    Eigen::Matrix3d vec1 = es1.pseudoEigenvectors();
+
+    double* eigMatptr = val1.data();
+    double* eigMatptrnew = new double[val1.size()];
+    Eigen::Map<Eigen::Matrix3d>(eigMatptrnew, val1.rows(), val1.cols()) = val1;
+
+    return val1;
+
+    //return vec1;
+}
+
+int* sort(int num[], string dataname) {
+    Eigen::Matrix3d matrix = eigen_value(dataname);
+
+
+
+    double temp = 0;
+    int tmpN = 0;
+
+    std::vector<int> array;
+
+    //該迴圈將特徵值由大排到小
+    for (int i = 0; i < 9; i++) {
+        for (int j = i; j < 9; j++) {
+            if (matrix(j) > matrix(i)) {
+                //進行Swapping
+                temp = matrix(j);
+                tmpN = num[j];
+                matrix(j) = matrix(i);
+                num[j] = num[i];
+                matrix(i) = temp;
+                num[i] = tmpN;
+            }
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        if (num[i] == 4) {
+            num[i] = 3;
+        }
+        if (num[i] == 8) {
+            num[i] = 6;
+        }
+    }
+    // 3的就是 Vector y (3'4'5) , 0 就是 vector x (0'1'2) , 6 就是 vector x (6'7'8) 
+    return num;
+}
+
+Eigen::Matrix3d eigenv_v(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+    int cld_sz_1 = cloud->size();
+    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+    normals->resize(cld_sz_1);
+
+    //計算中心點座標
+    double center_x1 = 0, center_y1 = 0, center_z1 = 0;
+    for (int i = 0; i < cld_sz_1; i++) {
+        center_x1 += cloud->points[i].x;
+        center_y1 += cloud->points[i].y;
+        center_z1 += cloud->points[i].z;
+
+    }
+    center_x1 /= cld_sz_1;
+    center_y1 /= cld_sz_1;
+    center_z1 /= cld_sz_1;
+    //計算共變異數矩陣
+    double xx1 = 0, xy1 = 0, xz1 = 0, yy1 = 0, yz1 = 0, zz1 = 0;
+    for (int i = 0; i < cld_sz_1; i++) {
+        xx1 += (cloud->points[i].x - center_x1) * (cloud->points[i].x - center_x1);
+        xy1 += (cloud->points[i].x - center_x1) * (cloud->points[i].y - center_y1);
+        xz1 += (cloud->points[i].x - center_x1) * (cloud->points[i].z - center_z1);
+        yy1 += (cloud->points[i].y - center_y1) * (cloud->points[i].y - center_y1);
+        yz1 += (cloud->points[i].y - center_y1) * (cloud->points[i].z - center_z1);
+        zz1 += (cloud->points[i].z - center_z1) * (cloud->points[i].z - center_z1);
+
+    }
+    //大小为3*3的共變異數矩陣
+    Eigen::Matrix3d covMat1(3, 3);
+    covMat1(0, 0) = xx1 / cld_sz_1;
+    covMat1(0, 1) = covMat1(1, 0) = xy1 / cld_sz_1;
+    covMat1(0, 2) = covMat1(2, 0) = xz1 / cld_sz_1;
+    covMat1(1, 1) = yy1 / cld_sz_1;
+    covMat1(1, 2) = covMat1(2, 1) = yz1 / cld_sz_1;
+    covMat1(2, 2) = zz1 / cld_sz_1;
+
+    //求特徵值與特徵向量
+    Eigen::EigenSolver<Eigen::Matrix3d> es1(covMat1);
+    Eigen::Matrix3d val1 = es1.pseudoEigenvalueMatrix();
+    Eigen::Matrix3d vec1 = es1.pseudoEigenvectors();
+
+    double* eigMatptr = vec1.data();
+    double* eigMatptrnew = new double[vec1.size()];
+    Eigen::Map<Eigen::Matrix3d>(eigMatptrnew, vec1.rows(), vec1.cols()) = vec1;
+
+    for (int i = 0; i < 9; ++i) {
+        //std::cout<< vec1(i) + 1 << std::endl;
+    }
+
+    return vec1;
 }
 
 void transform_Matrix(string basedata, string transformresult, int Xangle, int Yangle, int Zangle) {
@@ -591,90 +561,137 @@ void transform_Matrix(string basedata, string transformresult, int Xangle, int Y
     pcl::io::savePCDFile<pcl::PointXYZ>(transformresult + ".pcd", *transformed_cloud);
 }
 
-Eigen::Matrix3d eigenv_v(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
-    int cld_sz_1 = cloud->size();
-    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-    normals->resize(cld_sz_1);
-
-    //计算中心点坐标
-    double center_x1 = 0, center_y1 = 0, center_z1 = 0;
-    for (int i = 0; i < cld_sz_1; i++) {
-        center_x1 += cloud->points[i].x;
-        center_y1 += cloud->points[i].y;
-        center_z1 += cloud->points[i].z;
-
+string visualization::Visualize() {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr input(new pcl::PointCloud<pcl::PointXYZ>);
+    if (pcl::io::loadPCDFile(inputcloud+".pcd", *input) == -1) {
+        PCL_ERROR("Can not read the file.");
     }
-    center_x1 /= cld_sz_1;
-    center_y1 /= cld_sz_1;
-    center_z1 /= cld_sz_1;
-    //计算协方差矩阵
-    double xx1 = 0, xy1 = 0, xz1 = 0, yy1 = 0, yz1 = 0, zz1 = 0;
-    for (int i = 0; i < cld_sz_1; i++) {
-        xx1 += (cloud->points[i].x - center_x1) * (cloud->points[i].x - center_x1);
-        xy1 += (cloud->points[i].x - center_x1) * (cloud->points[i].y - center_y1);
-        xz1 += (cloud->points[i].x - center_x1) * (cloud->points[i].z - center_z1);
-        yy1 += (cloud->points[i].y - center_y1) * (cloud->points[i].y - center_y1);
-        yz1 += (cloud->points[i].y - center_y1) * (cloud->points[i].z - center_z1);
-        zz1 += (cloud->points[i].z - center_z1) * (cloud->points[i].z - center_z1);
-
+    pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("VIEWER"));
+    viewer->setBackgroundColor(0, 0, 0);
+    viewer->addPointCloud<pcl::PointXYZ>(input, "cloud");
+    while (!viewer->wasStopped())
+    {
+        viewer->spinOnce(1000);
+        //boost::this_thread::sleep(boost::posix_time::microseconds(100000));
     }
-    //大小为3*3的协方差矩阵
-    Eigen::Matrix3d covMat1(3, 3);
-    covMat1(0, 0) = xx1 / cld_sz_1;
-    covMat1(0, 1) = covMat1(1, 0) = xy1 / cld_sz_1;
-    covMat1(0, 2) = covMat1(2, 0) = xz1 / cld_sz_1;
-    covMat1(1, 1) = yy1 / cld_sz_1;
-    covMat1(1, 2) = covMat1(2, 1) = yz1 / cld_sz_1;
-    covMat1(2, 2) = zz1 / cld_sz_1;
-
-    //求特征值与特征向量
-    Eigen::EigenSolver<Eigen::Matrix3d> es1(covMat1);
-    Eigen::Matrix3d val1 = es1.pseudoEigenvalueMatrix();
-    Eigen::Matrix3d vec1 = es1.pseudoEigenvectors();
-
-    double* eigMatptr = vec1.data();
-    double* eigMatptrnew = new double[vec1.size()];
-    Eigen::Map<Eigen::Matrix3d>(eigMatptrnew, vec1.rows(), vec1.cols()) = vec1;
-
-    for (int i = 0; i < 9; ++i) {
-        //std::cout<< vec1(i) + 1 << std::endl;
-    }
-
-    /*
-    Eigen::RowVector3d EigenXYZ = vec1.row(0);
-    Eigen::VectorXd a(1);
-    a = EigenXYZ.col(0);
-    */
-
-    /*
-    std::cout << "\n------" << dataname << "--------" << std::endl;
-    std::cout << "     x  " << "     y  " << "     z  " << std::endl;
-    std::cout << val1.row(0) << "\n" << val1.row(1) << "\n" << val1.row(2) << std::endl;
-    std::cout << "\n------" << dataname << "--------" << std::endl;
-    std::cout << "     x  " << "     y  " << "     z  " << std::endl;
-    std::cout << vec1.row(0) << "\n" << vec1.row(1) << "\n" << vec1.row(2) << std::endl;
-    */
-
-    return vec1;
+    return "Visualize complete";
 }
 
-void simp(string filename)  //主程式
-{
+float Curvature::mean_curv() {
     std::vector<node> h_mean; //主要儲存vector
-    //std::string filename = "S0001A0022_XYZ";
-    //load the file
     pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
 
-
-    if (pcl::io::loadPCDFile(filename+".pcd", *input) == -1) {
+    if (pcl::io::loadPCDFile(inputcloud + ".pcd", *input) == -1) {
         PCL_ERROR("Can not read the file.");
     }
 
     int num[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-    std::cout << eigen_value(filename) << std::endl;
+    std::cout << eigen_value(inputcloud) << std::endl;
 
     cout << "into sort" << endl;
-    int* ptr = sort(num, filename);
+    int* ptr = sort(num, inputcloud);
+    cout << "out of sort" << endl;
+
+    //cout << "into eigenvalue" << endl;
+    Eigen::Matrix3d vector_eigen = eigenv_v(input);
+
+    //build the kdtree
+    pcl::KdTreeFLANN<PointT> kdtree;
+    kdtree.setInputCloud(input);
+
+    cout << "start sampling" << endl;
+    for (int i = 0; i < input->size(); i++) {
+
+        auto start = std::chrono::system_clock::now();
+        // Some computation here
+
+
+        PointT searchPoint;
+        searchPoint = input->points[i];
+        pcl::PointCloud<PointT>::Ptr newcloud(new pcl::PointCloud<PointT>);
+        int K = 31;
+        std::vector<int> pointIdxNKNSearch(K);
+        std::vector<float> pointNKNSquaredDistance(K);
+
+
+        if (kdtree.nearestKSearch(searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
+        {
+
+
+            for (std::size_t i = 1; i < pointIdxNKNSearch.size(); ++i) {
+
+
+                newcloud->push_back((*input)[pointIdxNKNSearch[i]]);
+
+            }
+
+        }
+        pcl::KdTreeFLANN<PointT> newkdtree;
+
+
+        newkdtree.setInputCloud(newcloud);
+
+        //auto end = std::chrono::system_clock::now();
+
+        //std::chrono::duration<double> elapsed_seconds = end - start;
+
+        //std::cout << elapsed_seconds.count() << std::endl;
+
+        //cout << "into ki" << endl;
+        kix(i, input, newcloud, newkdtree, vector_eigen, ptr);
+        kiy(i, input, newcloud, newkdtree, vector_eigen, ptr);
+
+
+        /*
+    *fftw_complex 是FFTW自定義的複數類
+    *引入<complex>則會使用STL的複數類
+    */
+
+        int N = 8;
+        double Ki_first = 0;
+        double Ki_second = 0;
+        double H_i;
+
+        Ki_first = k_i(g_kix, N);
+
+        Ki_second = k_i(g_kiy, N);
+
+        //cout << "into H_i" << endl;
+        H_i = (Ki_first + Ki_second) / 2;
+
+        node point;
+        point.index = i;
+        point.curvature = H_i;
+
+        h_mean.push_back(point);
+
+    }
+    //cout << "finish the curvature" << endl;
+
+    float Mean = 0;
+    //cout << "start mean" << endl;
+    for (int c = 0; c < h_mean.size(); c++)
+        Mean += fabsf(h_mean.at(c).curvature);
+    Mean = Mean / input->size();
+    return Mean;
+    //cout << "finish mean" << endl;
+}
+
+string simplicate::simp(float alpha)  //主程式
+{
+    std::vector<node> h_mean; //主要儲存vector
+    pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
+
+
+    if (pcl::io::loadPCDFile(inputcloud+".pcd", *input) == -1) {
+        PCL_ERROR("Can not read the file.");
+    }
+
+    int num[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+    std::cout << eigen_value(inputcloud) << std::endl;
+
+    cout << "into sort" << endl;
+    int* ptr = sort(num, inputcloud);
     cout << "out of sort" << endl;
 
     /*for (int i = 0; i < 3; i++) {
@@ -732,8 +749,8 @@ void simp(string filename)  //主程式
 
 
         /*
-    *fftw_complex 是FFTW自定义的复数类
-    *引入<complex>则会使用STL的复数类
+    *fftw_complex 是FFTW自定義的複數類
+    *引入<complex>則會使用STL的複數類
     */
 
         int N = 8;
@@ -796,8 +813,6 @@ void simp(string filename)  //主程式
     Kdtree->setInputCloud(input);
 
     //int k = 0;
-
-    float alpha = 0.27;
     cout << "start marking" << endl;
     pcl::PointXYZ searchPoint;
     for (int k = 0; k < h_mean.size(); k++) {
@@ -843,13 +858,31 @@ void simp(string filename)  //主程式
         point.z = input->points[storage_index[trace]].z;
         trace++;
     }
-    cout << "ready to save" << endl;
-    pcl::io::savePCDFileASCII(filename + "simp027.pcd", result);
-}
 
-int main() {
-    string input;
-    cin >> input;
-    simp(input);
-    return 0;
+    cout << "ready to save" << endl;
+    pcl::io::savePCDFileASCII(inputcloud + "simp020.pcd", result);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr output(new pcl::PointCloud<pcl::PointXYZ>);
+    if (pcl::io::loadPCDFile(inputcloud + "simp020.pcd", *output) == -1) {
+        PCL_ERROR("Can not read the file.");
+    }
+
+    pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("VIEW"));
+    int v1(0);
+    viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+    int v2(0);
+    viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+    viewer->setBackgroundColor(0, 0, 0, v1);
+    viewer->setBackgroundColor(0, 0, 0, v2);
+    viewer->addText("before", 15, 15, "v1 text");
+    viewer->addText("after", 15, 15, "v2 text");
+    viewer->addPointCloud<pcl::PointXYZ>(input, "cloud1", v1);
+    viewer->addPointCloud<pcl::PointXYZ>(output, "cloud2", v2);
+
+    while (!viewer->wasStopped())
+    {
+        viewer->spinOnce(1000);
+        //boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    }
+    return "simplication complete";
 }
