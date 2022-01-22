@@ -677,7 +677,7 @@ float Curvature::mean_curv() {
     //cout << "finish mean" << endl;
 }
 
-string simplicate::simp(float alpha)  //主程式
+string simplicate::simp(float alpha, string Out)  //主程式
 {
     std::vector<node> h_mean; //主要儲存vector
     pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
@@ -685,6 +685,7 @@ string simplicate::simp(float alpha)  //主程式
 
     if (pcl::io::loadPCDFile(inputcloud+".pcd", *input) == -1) {
         PCL_ERROR("Can not read the file.");
+        return "Cannot read the input.";
     }
 
     int num[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -786,25 +787,15 @@ string simplicate::simp(float alpha)  //主程式
     Mean = Mean / input->size();
     cout << "finish mean" << endl;
 
-    /*for (int ex = 0; ex < h_mean.size(); ex++) {
-        cout << h_mean[ex].curvature << endl;
-    }*/
-
     vector<int> indices;
-    //vector<int> record;
     vector<float> dist;
-    //vector<float> curv;
     vector<int> checked;
     vector<int> storage_index;
 
-    cout << "start merging" << endl;
+    //cout << "start merging" << endl;
     mergesort(h_mean, 0, h_mean.size() - 1);
-    /*for (int count = 0; count < h_mean.size(); count++) {
-        cout << h_mean[count].curvature << endl;
-    }*/
-    cout << "finish merging" << endl;
-
-    //cout << "test stop" << endl;
+    
+    //cout << "finish merging" << endl;
 
     for (int i = 0; i < input->size(); i++)
         checked.push_back(0);
@@ -812,7 +803,6 @@ string simplicate::simp(float alpha)  //主程式
     pcl::search::KdTree<PointT>::Ptr Kdtree(new pcl::search::KdTree<PointT>);
     Kdtree->setInputCloud(input);
 
-    //int k = 0;
     cout << "start marking" << endl;
     pcl::PointXYZ searchPoint;
     for (int k = 0; k < h_mean.size(); k++) {
@@ -821,12 +811,8 @@ string simplicate::simp(float alpha)  //主程式
             searchPoint.y = input->points[h_mean[k].index].y;
             searchPoint.z = input->points[h_mean[k].index].z;
 
-            //cout << searchPoint.x << " " << searchPoint.y << " " << searchPoint.z << endl;
-
             float radius = alpha * Mean / fabsf(h_mean[k].curvature);
             Kdtree->radiusSearch(searchPoint, radius, indices, dist);
-
-            //cout << "cloud size after search:" << input->size() << endl;
 
             for (int j = 0; j < indices.size(); j++) {
                 if (checked[indices[j]] != 2)
@@ -836,7 +822,7 @@ string simplicate::simp(float alpha)  //主程式
             indices.clear();
         }
     }
-    cout << "finish marking" << endl;
+    //cout << "finish marking" << endl;
 
 
     for (int tap = 0; tap < checked.size(); tap++) {
@@ -860,11 +846,12 @@ string simplicate::simp(float alpha)  //主程式
     }
 
     cout << "ready to save" << endl;
-    pcl::io::savePCDFileASCII(inputcloud + "simp020.pcd", result);
+    pcl::io::savePCDFileASCII(Out + ".pcd", result);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr output(new pcl::PointCloud<pcl::PointXYZ>);
-    if (pcl::io::loadPCDFile(inputcloud + "simp020.pcd", *output) == -1) {
+    if (pcl::io::loadPCDFile(Out + ".pcd", *output) == -1) {
         PCL_ERROR("Can not read the file.");
+        return "Cannot visualize.";
     }
 
     pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("VIEW"));
@@ -882,7 +869,6 @@ string simplicate::simp(float alpha)  //主程式
     while (!viewer->wasStopped())
     {
         viewer->spinOnce(1000);
-        //boost::this_thread::sleep(boost::posix_time::microseconds(100000));
     }
     return "simplication complete";
 }

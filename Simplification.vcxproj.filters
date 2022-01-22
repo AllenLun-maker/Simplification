@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Simplificate.cpp">
+    <ClCompile Include="Definition.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
     <ClCompile Include="Main.cpp">
@@ -24,9 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="Measure.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>

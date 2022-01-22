@@ -4,6 +4,7 @@
 #define HEADER_H
 
 #include <string>
+#include<vector>
 
 namespace Simplification {
 
@@ -19,7 +20,7 @@ namespace Simplification {
 
 	static class simplicate {
 	public:
-		std::string simp(float alpha);
+		std::string simp(float alpha, std::string Out);
 	};
 }
 
