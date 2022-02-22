@@ -691,22 +691,18 @@ string simplicate::simp(float alpha, string Out)  //主程式
     int num[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
     std::cout << eigen_value(inputcloud) << std::endl;
 
-    cout << "into sort" << endl;
+    //cout << "into sort" << endl;
     int* ptr = sort(num, inputcloud);
-    cout << "out of sort" << endl;
+    //cout << "out of sort" << endl;
 
-    /*for (int i = 0; i < 3; i++) {
-        std::cout << ptr[i] << std::endl;
-    }*/
-
-    cout << "into eigenvalue" << endl;
+    //cout << "into eigenvalue" << endl;
     Eigen::Matrix3d vector_eigen = eigenv_v(input);
 
     //build the kdtree
     pcl::KdTreeFLANN<PointT> kdtree;
     kdtree.setInputCloud(input);
 
-    cout << "start sampling" << endl;
+    //cout << "start sampling" << endl;
     for (int i = 0; i < input->size(); i++) {
 
         auto start = std::chrono::system_clock::now();
@@ -778,14 +774,14 @@ string simplicate::simp(float alpha, string Out)  //主程式
         //cout << "h_mean index  " << h_mean.at(i).index<< "h_mean curvature  " << h_mean.at(i).curvature << endl;
 
     }
-    cout << "finish the curvature" << endl;
+    //cout << "finish the curvature" << endl;
 
     float Mean = 0;
-    cout << "start mean" << endl;
+    //cout << "start mean" << endl;
     for (int c = 0; c < h_mean.size(); c++)
         Mean += fabsf(h_mean.at(c).curvature);
     Mean = Mean / input->size();
-    cout << "finish mean" << endl;
+    //cout << "finish mean" << endl;
 
     vector<int> indices;
     vector<float> dist;
@@ -803,7 +799,7 @@ string simplicate::simp(float alpha, string Out)  //主程式
     pcl::search::KdTree<PointT>::Ptr Kdtree(new pcl::search::KdTree<PointT>);
     Kdtree->setInputCloud(input);
 
-    cout << "start marking" << endl;
+    //cout << "start marking" << endl;
     pcl::PointXYZ searchPoint;
     for (int k = 0; k < h_mean.size(); k++) {
         if (checked[h_mean[k].index] == 0) {
@@ -845,7 +841,7 @@ string simplicate::simp(float alpha, string Out)  //主程式
         trace++;
     }
 
-    cout << "ready to save" << endl;
+    //cout << "ready to save" << endl;
     pcl::io::savePCDFileASCII(Out + ".pcd", result);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr output(new pcl::PointCloud<pcl::PointXYZ>);
