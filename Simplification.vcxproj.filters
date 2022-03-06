@@ -15,16 +15,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Definition.cpp">
+    <ClCompile Include="Def_Cal.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
     <ClCompile Include="Main.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Header.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
+    <ClCompile Include="Def_Demo.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

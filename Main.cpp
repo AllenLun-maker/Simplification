@@ -1,7 +1,9 @@
 #include<iostream>
-#include "Header.h"
+#include "Def_Demo.cpp"
+#include "Def_Cal.cpp"
 //#include "Measure.h"
-using namespace Simplification;
+//using namespace Demo;
+
 //using namespace Variable;
 extern std::string inputcloud;
 int main() {
@@ -15,24 +17,24 @@ int main() {
 	switch (func)
 	{
 	case 1:
-		visualization Vs;
-		Vs.Visualize();
+		Show demo;
+		demo.Visualize();
 		break;
 
 	case 2:
-		Curvature Cr;
-		Cr.mean_curv();
+		Calculation cal;
+		cal.mean_curv();
 		break;
 
 	case 3:
-		simplicate Sp;
+		Calculation cal;
 		float alpha;
 		std::string Out;
 		std::cout << "enter your alpha(調整簡化程度):" << std::endl;
 		std::cin >> alpha;
 		std::cout << "enter your output filename:" << std::endl;
 		std::cin >> Out;
-		Sp.simp(alpha,Out);
+		cal.simp(alpha,Out);
 		break;
 	}
 	
