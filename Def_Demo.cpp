@@ -28,7 +28,7 @@ string inputcloud;
 
 class Show {
 public :
-    void Visualize() {
+    void Visualize() {      //µøÄ±¤Æ
             pcl::PointCloud<pcl::PointXYZ>::Ptr input(new pcl::PointCloud<pcl::PointXYZ>);
             if (pcl::io::loadPCDFile(inputcloud + ".pcd", *input) == -1) {
                 PCL_ERROR("Can not read the file.");

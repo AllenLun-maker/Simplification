@@ -16,7 +16,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/segmentation/region_growing.h>
-// #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/cloud_viewer.h>
 #include<vector>
 #include<algorithm>
 #include<fstream>
@@ -49,14 +49,14 @@ typedef pcl::Normal Normal;
 
 string inputcloud;
 
-struct node {
+struct node {   //此專案專用之資料格式
     int index;
     float curvature;
 };
 
 class Calculation {
 public:
-        float k_i(vector<float> SampV, int N)
+        float k_i(vector<float> SampV, int N) 
         {
             vector<float> a; //FFT後實部運算
             vector<float> b; //FFT後虛部運算
@@ -387,7 +387,7 @@ public:
             }
         }
 
-        Eigen::Matrix3d eigen_value(string dataname) {
+        Eigen::Matrix3d eigen_value(string dataname) {  //計算特徵值
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::io::loadPCDFile(dataname + ".pcd", *cloud);
             int cld_sz_1 = cloud->size();
@@ -528,7 +528,7 @@ public:
             return vec1;
         }
 
-        void transform_Matrix(string basedata, string transformresult, int Xangle, int Yangle, int Zangle) {
+        void transform_Matrix(string basedata, string transformresult, int Xangle, int Yangle, int Zangle) {    //進行旋轉
             typedef pcl::PointXYZ PointT;
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::io::loadPCDFile(basedata + ".pcd", *cloud);
@@ -558,7 +558,7 @@ public:
             pcl::io::savePCDFile<pcl::PointXYZ>(transformresult + ".pcd", *transformed_cloud);
         }
 
-        float mean_curv() {
+        float mean_curv() {     //計算平均曲率
             std::vector<node> h_mean; //主要儲存vector
             pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
 
@@ -658,7 +658,7 @@ public:
             //cout << "finish mean" << endl;
         }
 
-        void simp(float alpha, string Out)  //主程式
+        void simp(float alpha, string Out)  //簡化
         {
             std::vector<node> h_mean; //主要儲存vector
             pcl::PointCloud<PointT>::Ptr input(new pcl::PointCloud<PointT>);
